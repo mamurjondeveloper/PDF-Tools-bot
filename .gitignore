@@ -1,0 +1,23 @@
+# SQLite Database files
+data/*
+!data/.gitkeep
+
+# System log files
+logs/*
+!logs/.gitkeep
+
+# Temporary session directories
+temp/*
+!temp/.gitkeep
+
+# Python local environment & cache files
+venv/
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Local environment secret variables
+.env
+.env.local

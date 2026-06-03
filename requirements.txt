@@ -1,0 +1,7 @@
+aiogram>=3.4.1
+aiosqlite>=0.20.0
+pypdf>=4.1.0
+pillow>=10.2.0
+docx2pdf>=0.1.8
+python-dotenv>=1.0.1
+pywin32>=306; sys_platform == 'win32'
