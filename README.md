@@ -26,7 +26,7 @@ flowchart TD
     subgraph FSM_States [FSM Holat boshqaruvchisi]
         Router -->|📎 PDF Birlashtirish tugmasi| StateMerge[🔄 MergeStates.waiting_for_pdfs]
         Router -->|✂️ PDF Ajratish tugmasi| StateSplit[🔄 SplitStates.waiting_for_pdf]
-        Router -->|🖼️ JPG to PDF tugmasi| StateJpg[🔄 JpgToPdfStates.waiting_for_images]
+        Router -->|🖼️ Rasmlar → PDF tugmasi| StateJpg[🔄 JpgToPdfStates.waiting_for_images]
         Router -->|📄 Word to PDF tugmasi| StateDoc[🔄 DocToPdfStates.waiting_for_doc]
         Router -->|🛡️ /admin buyrug'i| AdminHandler[🛡️ Admin paneli]
     end
@@ -94,7 +94,7 @@ flowchart TD
 
 - **📎 PDF Birlashtirish:** Bir nechta PDF hujjatlarini yuklang, ular yuborilgan tartibida bitta faylga birlashtiriladi.
 - **✂️ PDF Ajratish:** Sahifalarni yakka-yakka ajratish (agar 3 tadan ko'p sahifa bo'lsa, avtomatik ZIP arxiv shaklida yuboradi), belgilangan sahifa oralig'ini kesib olish (masalan, `1-3, 5-8`) yoki tanlangan sahifalarni ajratib olish (masalan, `1, 3, 5`).
-- **🖼️ JPG(s) → PDF:** Istalgan formatdagi rasmlarni (JPG, JPEG, PNG) siqilgan foto yoki fayl ko'rinishida yuboring va ularni sahifalari avtomatik moslashtirilgan PDF shaklida oling.
+- **🖼️ Rasmlar → PDF:** Istalgan formatdagi rasmlarni (JPG, JPEG, PNG) siqilgan foto yoki fayl ko'rinishida yuboring va ularni sahifalari avtomatik moslashtirilgan PDF shaklida oling.
 - **📄 Word → PDF:** `.doc` va `.docx` Word hujjatlarini o'z formati va shriftlarini saqlagan holda PDF-ga o'tkazing (Microsoft Word o'rnatilgan Windows server talab etiladi).
 - **🧹 Avtomatik Tozalash:** Tizim xotirasini tejash uchun ishlov berilgan barcha fayllarni bir zumda tozalash va eski tashlab ketilgan fayllarni avtomatik o'chirish tizimi.
 - **🛡️ Admin Paneli:** Ruxsat etilgan adminlar `/admin` buyrug'i orqali foydalanuvchilar soni, umumiy operatsiyalar, kunlik faollik hisobotlarini ko'rishi hamda barcha foydalanuvchilarga (matn, rasm, fayl, tugmalardan iborat) reklama xabarlarini yuborishi mumkin.

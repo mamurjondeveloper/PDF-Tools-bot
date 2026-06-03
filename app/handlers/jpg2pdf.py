@@ -18,7 +18,7 @@ router = Router(name="jpg2pdf_router")
 class JpgToPdfStates(StatesGroup):
     waiting_for_images = State()
 
-@router.message(F.text == "🖼 JPG(s) → PDF")
+@router.message(F.text == "🖼️ Rasmlar → PDF")
 async def start_jpg2pdf(message: Message, state: FSMContext) -> None:
     """Initiates the JPG/PNG to PDF workflow."""
     await state.clear()
@@ -27,21 +27,23 @@ async def start_jpg2pdf(message: Message, state: FSMContext) -> None:
     session_dir = os.path.join(TEMP_DIR, f"{message.from_user.id}_jpg2pdf_{session_id}")
     os.makedirs(session_dir, exist_ok=True)
     
-    await state.set_state(JpgToPdfStates.waiting_for_images)
-    await state.update_data(
-        session_dir=session_dir,
-        image_paths=[]
-    )
-    
-    await message.answer(
+    status_msg = await message.answer(
         text=(
-            "📥 **JPG → PDF rejimi**\n\n"
-            "Iltimos, PDF-ga aylantirmoqchi bo'lgan rasmlaringizni (JPG, JPEG yoki PNG) yuboring.\n"
+            "📥 **Rasmlar → PDF rejimi**\n\n"
+            "Iltimos, PDF-ga aylantirmoqchi bo'lgan rasmlaringizni (JPG, JPEG yoki PNG) ketma-ket yuboring.\n"
             "Rasmlarni oddiy rasm yoki siqilmagan hujjat shaklida yuborishingiz mumkin.\n"
-            "Barcha rasmlarni yuborgandan so'ng, **Bajarildi (Konvertatsiya)** tugmasini bosing."
+            "Hozircha yuklangan rasmlar: **0** ta\n\n"
+            "Tayyor bo'lgach, **Bajarildi (Konvertatsiya)** tugmasini bosing."
         ),
         reply_markup=get_jpg2pdf_keyboard(),
         parse_mode="Markdown"
+    )
+    
+    await state.set_state(JpgToPdfStates.waiting_for_images)
+    await state.update_data(
+        session_dir=session_dir,
+        image_paths=[],
+        status_msg_id=status_msg.message_id
     )
 
 async def handle_image_download(message: Message, state: FSMContext, bot: Bot, file_id: str, original_name: str) -> None:
@@ -49,8 +51,7 @@ async def handle_image_download(message: Message, state: FSMContext, bot: Bot, f
     data = await state.get_data()
     session_dir = data["session_dir"]
     image_paths = data["image_paths"]
-    
-    status_msg = await message.answer(f"📥 Rasm yuklab olinmoqda: `{original_name}`...", parse_mode="Markdown")
+    status_msg_id = data.get("status_msg_id")
     
     try:
         # Determine file extension
@@ -67,18 +68,26 @@ async def handle_image_download(message: Message, state: FSMContext, bot: Bot, f
         image_paths.append(dest_path)
         await state.update_data(image_paths=image_paths)
         
-        await status_msg.edit_text(
-            text=(
-                f"f'✅ #{file_idx}-rasm qo'shildi: `{original_name}`\n\n"
-                f"Yuklangan jami rasmlar: **{file_idx}**\n"
-                "Yana rasm yuboring yoki **Bajarildi (Konvertatsiya)** tugmasini bosing."
-            ),
-            reply_markup=get_jpg2pdf_keyboard(),
-            parse_mode="Markdown"
-        )
+        if status_msg_id:
+            new_text = (
+                f"📥 **Rasmlar → PDF rejimi**\n\n"
+                f"✅ Yuklandi: `{original_name}`\n"
+                f"Jami yuklangan rasmlar: **{file_idx}** ta\n\n"
+                f"Yana rasm yuborishingiz mumkin yoki **Bajarildi (Konvertatsiya)** tugmasini bosing."
+            )
+            try:
+                await bot.edit_message_text(
+                    chat_id=message.chat.id,
+                    message_id=status_msg_id,
+                    text=new_text,
+                    reply_markup=get_jpg2pdf_keyboard(),
+                    parse_mode="Markdown"
+                )
+            except Exception as edit_err:
+                logger.debug(f"Failed to edit status message: {edit_err}")
     except Exception as e:
         logger.error(f"Error downloading image: {e}", exc_info=True)
-        await status_msg.edit_text("❌ Rasmni yuklab olishda xatolik yuz berdi. Qaytadan urinib ko'ring.")
+        await message.answer(f"⚠️ `{original_name}` yuklab olishda xatolik yuz berdi.")
 
 @router.message(JpgToPdfStates.waiting_for_images, F.photo)
 async def collect_photo(message: Message, state: FSMContext, bot: Bot) -> None:
@@ -118,7 +127,7 @@ async def process_jpg2pdf(callback: CallbackQuery, state: FSMContext) -> None:
         
         # Send PDF file
         await callback.message.edit_text("📤 PDF yuborilmoqda...")
-        pdf_file = FSInputFile(output_path, filename="converted_images.pdf")
+        pdf_file = FSInputFile(output_path, filename="rasmlar_to'plami.pdf")
         
         await callback.message.answer_document(
             document=pdf_file,
@@ -150,4 +159,5 @@ async def cancel_jpg2pdf(callback: CallbackQuery, state: FSMContext) -> None:
     
     if session_dir:
         await asyncio.to_thread(delete_path, session_dir)
+
 

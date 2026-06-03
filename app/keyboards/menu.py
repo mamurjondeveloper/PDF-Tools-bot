@@ -8,7 +8,7 @@ def get_main_menu() -> ReplyKeyboardMarkup:
             KeyboardButton(text="✂️ PDF Ajratish")
         ],
         [
-            KeyboardButton(text="🖼 JPG(s) → PDF"),
+            KeyboardButton(text="🖼️ Rasmlar → PDF"),
             KeyboardButton(text="📄 Word → PDF")
         ],
         [

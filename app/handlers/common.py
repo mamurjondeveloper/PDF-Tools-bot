@@ -40,7 +40,7 @@ async def cmd_help(message: Message, state: FSMContext) -> None:
         "✂️ **PDF Ajratish**\n"
         "• PDF faylini yuklang.\n"
         "• Kerakli amalni tanlang: har bir sahifani ajratish, sahifalar oralig'i (masalan, 1-3) yoki tanlangan sahifalarni ajratish (masalan, 1,3,5).\n\n"
-        "🖼 **JPG(s) → PDF**\n"
+        "🖼️ **Rasmlar → PDF**\n"
         "• Bir yoki bir nechta rasm yuboring (JPG, JPEG, PNG).\n"
         "• Bot ularni bitta PDF hujjatiga birlashtiradi.\n"
         "• Yakunlash uchun *Bajarildi (Konvertatsiya)* tugmasini bosing.\n\n"
