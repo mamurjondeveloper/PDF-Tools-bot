@@ -1,15 +1,20 @@
 import logging
 from aiogram.filters import Filter
 from aiogram.types import Message, CallbackQuery
-from app.config.config import ADMIN_IDS
+from app.config.config import ADMIN_USERNAMES
 
 logger = logging.getLogger(__name__)
 
 class IsAdmin(Filter):
-    """Filter that checks if a user is in the configured ADMIN_IDS."""
+    """Filter that checks if a user's username is in the configured ADMIN_USERNAMES."""
     async def __call__(self, event: Message | CallbackQuery) -> bool:
-        user_id = event.from_user.id if event.from_user else 0
-        is_admin = user_id in ADMIN_IDS
+        user = event.from_user
+        if not user or not user.username:
+            return False
+            
+        username = user.username.lower()
+        is_admin = username in ADMIN_USERNAMES
         if not is_admin:
-            logger.warning(f"Unauthorized admin command attempt by user_id={user_id}")
+            logger.warning(f"Ruxsat etilmagan admin buyrug'i: username=@{username}")
         return is_admin
+

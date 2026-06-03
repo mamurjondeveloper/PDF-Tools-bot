@@ -213,7 +213,7 @@ pdf-tools-bot/
    ```
 2. `.env` faylini ochib, sozlamalarni kiriting:
    - `BOT_TOKEN`: [@BotFather](https://t.me/BotFather) orqali olingan bot tokeni.
-   - `ADMIN_IDS`: Admin huquqlariga ega bo'lgan foydalanuvchilarning Telegram ID raqamlari (vergul bilan ajratilgan, masalan: `123456789,987654321`).
+   - `ADMIN_USERNAMES`: Admin huquqlariga ega bo'lgan foydalanuvchilarning Telegram foydalanuvchi nomlari (usernames) ro'yxati (vergul bilan ajratilgan, masalan: `username1,username2`).
    - `LOG_LEVEL`: Log yozish darajasi (`DEBUG`, `INFO`, `WARNING`, `ERROR`).
 
 ---

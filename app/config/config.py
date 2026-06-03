@@ -20,14 +20,15 @@ BOT_TOKEN = os.getenv("BOT_TOKEN")
 if not BOT_TOKEN:
     raise ValueError("BOT_TOKEN is not set in environment variables or .env file.")
 
-# Parse Admin IDs (comma-separated integers)
-admin_ids_raw = os.getenv("ADMIN_IDS", "")
-ADMIN_IDS = []
-if admin_ids_raw:
-    for admin_id in admin_ids_raw.split(","):
-        admin_id = admin_id.strip()
-        if admin_id.isdigit():
-            ADMIN_IDS.append(int(admin_id))
+# Parse Admin Usernames (comma-separated strings, stripped of '@' and forced lowercase)
+admin_usernames_raw = os.getenv("ADMIN_USERNAMES", "")
+ADMIN_USERNAMES = []
+if admin_usernames_raw:
+    for username in admin_usernames_raw.split(","):
+        username = username.strip().lstrip("@").lower()
+        if username:
+            ADMIN_USERNAMES.append(username)
+
 
 LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO").upper()
 DB_PATH = os.path.join(DATA_DIR, "pdf_tools_bot.db")
