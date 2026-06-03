@@ -24,8 +24,8 @@ async def cmd_admin(message: Message, state: FSMContext) -> None:
     await state.clear()
     await message.answer(
         text=(
-            "🛡 **PDF Tools Bot Admin Control Panel**\n\n"
-            "Select an administrative command below to query statistics or broadcast a message."
+            "🛡 **PDF Tools Bot - Admin boshqaruv paneli**\n\n"
+            "Statistikalarni ko'rish yoki foydalanuvchilarga xabar tarqatish uchun quyidagi buyruqlardan birini tanlang."
         ),
         reply_markup=get_admin_keyboard(),
         parse_mode="Markdown"
@@ -37,10 +37,10 @@ async def show_user_stats(callback: CallbackQuery) -> None:
     stats = await db.get_user_stats()
     
     text = (
-        "📊 **User Statistics**\n\n"
-        f"• **Total Registered Users:** {stats.get('total_users', 0)}\n"
-        f"• **New Users Today:** {stats.get('new_users_today', 0)}\n"
-        f"• **Active Users (Last 24h):** {stats.get('active_users_24h', 0)}\n"
+        "📊 **Foydalanuvchilar statistikasi**\n\n"
+        f"• **Jami ro'yxatdan o'tganlar:** {stats.get('total_users', 0)} ta\n"
+        f"• **Bugun qo'shilganlar:** {stats.get('new_users_today', 0)} ta\n"
+        f"• **Oxirgi 24 soatda faollar:** {stats.get('active_users_24h', 0)} ta\n"
     )
     
     await callback.message.edit_text(
@@ -63,14 +63,14 @@ async def show_conversion_stats(callback: CallbackQuery) -> None:
     doc2pdf_c = by_type.get("doc2pdf", 0)
     
     text = (
-        "📈 **Conversion Statistics**\n\n"
-        f"• **Total Conversions Run:** {stats.get('total_conversions', 0)}\n"
-        f"• **Conversions (Last 24h):** {stats.get('conversions_24h', 0)}\n\n"
-        "**Breakdown by operation:**\n"
-        f"• 📎 PDF Merge: {merge_c}\n"
-        f"• ✂️ PDF Split: {split_c}\n"
-        f"• 🖼 JPG to PDF: {jpg2pdf_c}\n"
-        f"• 📄 DOC to PDF: {doc2pdf_c}\n"
+        "📈 **Konvertatsiyalar statistikasi**\n\n"
+        f"• **Jami operatsiyalar:** {stats.get('total_conversions', 0)} ta\n"
+        f"• **Oxirgi 24 soatda bajarilganlar:** {stats.get('conversions_24h', 0)} ta\n\n"
+        "**Amallar turi bo'yicha taqsimot:**\n"
+        f"• 📎 PDF Birlashtirish: {merge_c} ta\n"
+        f"• ✂️ PDF Ajratish: {split_c} ta\n"
+        f"• 🖼 JPG to PDF: {jpg2pdf_c} ta\n"
+        f"• 📄 Word to PDF: {doc2pdf_c} ta\n"
     )
     
     await callback.message.edit_text(
@@ -85,9 +85,9 @@ async def show_daily_activity(callback: CallbackQuery) -> None:
     """Queries daily active statistics."""
     stats = await db.get_daily_activity()
     text = (
-        "📆 **Last 24h Activity Summary**\n\n"
-        f"• **Active users engaged:** {stats.get('active_users', 0)}\n"
-        f"• **Conversions processed:** {stats.get('total_conversions', 0)}\n"
+        "📆 **Oxirgi 24 soatlik faollik hisoboti**\n\n"
+        f"• **Faol foydalanuvchilar soni:** {stats.get('active_users', 0)} ta\n"
+        f"• **Bajarilgan amallar soni:** {stats.get('total_conversions', 0)} ta\n"
     )
     await callback.message.edit_text(
         text=text,
@@ -102,9 +102,9 @@ async def start_broadcast(callback: CallbackQuery, state: FSMContext) -> None:
     await state.set_state(AdminStates.waiting_for_broadcast_msg)
     await callback.message.edit_text(
         text=(
-            "📢 **Broadcast System**\n\n"
-            "Please send the message you want to broadcast. You can include formatting, photos, or documents.\n"
-            "The bot will copy and send the exact content to all registered users."
+            "📢 **Reklama va xabarlar tarqatish tizimi**\n\n"
+            "Iltimos, barcha foydalanuvchilarga yubormoqchi bo'lgan xabaringizni yuboring. Xabarda rasm, video, formatlangan matn yoki tugmalar bo'lishi mumkin.\n"
+            "Bot ushbu xabarni nusxalab, barcha foydalanuvchilarga yuboradi."
         ),
         reply_markup=get_cancel_keyboard("admin_broad"),
         parse_mode="Markdown"
@@ -118,11 +118,11 @@ async def execute_broadcast(message: Message, state: FSMContext, bot: Bot) -> No
     total_users = len(user_ids)
     
     if total_users == 0:
-        await message.answer("⚠️ No users found in database to broadcast to.")
+        await message.answer("⚠️ Bazada xabar yuborish uchun foydalanuvchilar topilmadi.")
         await state.clear()
         return
         
-    status_msg = await message.answer(f"📢 Starting broadcast to **{total_users}** users...")
+    status_msg = await message.answer(f"📢 **{total_users}** ta foydalanuvchiga xabar yuborish boshlandi...")
     
     success_count = 0
     fail_count = 0
@@ -140,10 +140,10 @@ async def execute_broadcast(message: Message, state: FSMContext, bot: Bot) -> No
         if (idx + 1) % 15 == 0 or idx == total_users - 1:
             try:
                 await status_msg.edit_text(
-                    f"📢 Broadcasting in progress...\n"
-                    f"Processed: **{idx + 1}** / **{total_users}**\n"
-                    f"✅ Success: {success_count}\n"
-                    f"❌ Failed: {fail_count}"
+                    f"📢 Xabar tarqatish davom etmoqda...\n"
+                    f"Bajarildi: **{idx + 1}** / **{total_users}**\n"
+                    f"✅ Muvaffaqiyatli: {success_count}\n"
+                    f"❌ Xatolik bilan: {fail_count}"
                 )
             except Exception:
                 pass
@@ -153,10 +153,10 @@ async def execute_broadcast(message: Message, state: FSMContext, bot: Bot) -> No
         
     await status_msg.edit_text(
         text=(
-            "📢 **Broadcast Complete!**\n\n"
-            f"• **Target count:** {total_users}\n"
-            f"• **✅ Successful deliveries:** {success_count}\n"
-            f"• **❌ Failed deliveries:** {fail_count} (e.g. blocked/inactive users)"
+            "📢 **Xabar yuborish yakunlandi!**\n\n"
+            f"• **Foydalanuvchilar soni:** {total_users} ta\n"
+            f"• **✅ Yetkazildi:** {success_count} ta\n"
+            f"• **❌ Yetkazilmadi (bloklanganlar):** {fail_count} ta"
         ),
         parse_mode="Markdown"
     )
@@ -167,7 +167,7 @@ async def cancel_broadcast(callback: CallbackQuery, state: FSMContext) -> None:
     """Cancels the broadcast process."""
     await state.clear()
     await callback.message.edit_text(
-        text="❌ Broadcast cancelled.",
+        text="❌ Xabar tarqatish bekor qilindi.",
         reply_markup=get_admin_keyboard()
     )
 
@@ -175,3 +175,4 @@ async def cancel_broadcast(callback: CallbackQuery, state: FSMContext) -> None:
 async def close_admin_panel(callback: CallbackQuery) -> None:
     """Closes the admin panel."""
     await callback.message.delete()
+

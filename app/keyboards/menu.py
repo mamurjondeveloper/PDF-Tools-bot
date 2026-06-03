@@ -4,15 +4,15 @@ def get_main_menu() -> ReplyKeyboardMarkup:
     """Returns the main menu keyboard markup."""
     keyboard = [
         [
-            KeyboardButton(text="📎 PDF Merge"),
-            KeyboardButton(text="✂️ PDF Split")
+            KeyboardButton(text="📎 PDF Birlashtirish"),
+            KeyboardButton(text="✂️ PDF Ajratish")
         ],
         [
             KeyboardButton(text="🖼 JPG(s) → PDF"),
-            KeyboardButton(text="📄 DOC → PDF")
+            KeyboardButton(text="📄 Word → PDF")
         ],
         [
-            KeyboardButton(text="ℹ️ Help")
+            KeyboardButton(text="ℹ️ Yordam")
         ]
     ]
     return ReplyKeyboardMarkup(
@@ -20,3 +20,4 @@ def get_main_menu() -> ReplyKeyboardMarkup:
         resize_keyboard=True,
         persistent=True
     )
+

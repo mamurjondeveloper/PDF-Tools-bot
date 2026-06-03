@@ -17,7 +17,7 @@ router = Router(name="merge_router")
 class MergeStates(StatesGroup):
     waiting_for_pdfs = State()
 
-@router.message(F.text == "📎 PDF Merge")
+@router.message(F.text == "📎 PDF Birlashtirish")
 async def start_merge(message: Message, state: FSMContext) -> None:
     """Initiates the PDF merge workflow."""
     await state.clear()
@@ -35,9 +35,9 @@ async def start_merge(message: Message, state: FSMContext) -> None:
     
     await message.answer(
         text=(
-            "📥 **PDF Merge Mode**\n\n"
-            "Please send the PDF files you want to merge one by one in the order they should appear.\n"
-            "Once you have uploaded all files, click **Done (Merge)** below."
+            "📥 **PDF Birlashtirish rejimi**\n\n"
+            "Birlashtirmoqchi bo'lgan PDF fayllaringizni ketma-ket yuboring.\n"
+            "Barcha fayllarni yuklab bo'lgach, **Bajarildi (Birlashtirish)** tugmasini bosing."
         ),
         reply_markup=get_merge_keyboard(),
         parse_mode="Markdown"
@@ -48,7 +48,7 @@ async def collect_pdf(message: Message, state: FSMContext, bot: Bot) -> None:
     """Collects uploaded PDFs and saves them to the session directory."""
     doc = message.document
     if not doc or not (doc.file_name.lower().endswith(".pdf") or doc.mime_type == "application/pdf"):
-        await message.answer("⚠️ Please upload only PDF files.")
+        await message.answer("⚠️ Iltimos, faqat PDF fayllarini yuklang.")
         return
         
     data = await state.get_data()
@@ -56,7 +56,7 @@ async def collect_pdf(message: Message, state: FSMContext, bot: Bot) -> None:
     file_paths = data["file_paths"]
     
     # Send temporary progress message
-    status_msg = await message.answer(f"📥 Downloading `{doc.file_name}`...", parse_mode="Markdown")
+    status_msg = await message.answer(f"📥 `{doc.file_name}` yuklab olinmoqda...", parse_mode="Markdown")
     
     try:
         # Save file with a safe, ordered name
@@ -71,16 +71,16 @@ async def collect_pdf(message: Message, state: FSMContext, bot: Bot) -> None:
         
         await status_msg.edit_text(
             text=(
-                f"✅ Added file #{file_idx}: `{doc.file_name}`\n\n"
-                f"Total files uploaded: **{file_idx}**\n"
-                "Send another PDF or click **Done (Merge)** to compile."
+                f"✅ #{file_idx}-fayl qo'shildi: `{doc.file_name}`\n\n"
+                f"Yuklangan umumiy fayllar: **{file_idx}**\n"
+                "Yana PDF fayl yuboring yoki **Bajarildi (Birlashtirish)** tugmasini bosing."
             ),
             reply_markup=get_merge_keyboard(),
             parse_mode="Markdown"
         )
     except Exception as e:
         logger.error(f"Error downloading PDF file: {e}", exc_info=True)
-        await status_msg.edit_text("❌ Failed to download file. Please try again.")
+        await status_msg.edit_text("❌ Faylni yuklab olishda xatolik yuz berdi. Iltimos, qaytadan urinib ko'ring.")
 
 @router.callback_query(MergeStates.waiting_for_pdfs, F.data == "merge_done")
 async def process_merge(callback: CallbackQuery, state: FSMContext) -> None:
@@ -90,10 +90,10 @@ async def process_merge(callback: CallbackQuery, state: FSMContext) -> None:
     session_dir = data.get("session_dir")
     
     if len(file_paths) < 2:
-        await callback.answer("⚠️ You must upload at least 2 PDF files to merge.", show_alert=True)
+        await callback.answer("⚠️ Birlashtirish uchun kamida 2 ta PDF fayl yuklashingiz kerak.", show_alert=True)
         return
         
-    await callback.message.edit_text("⏳ Merging files, please wait...")
+    await callback.message.edit_text("⏳ PDF fayllar birlashtirilmoqda, iltimos kuting...")
     
     output_path = os.path.join(session_dir, "merged_output.pdf")
     
@@ -102,12 +102,12 @@ async def process_merge(callback: CallbackQuery, state: FSMContext) -> None:
         await merge_pdfs(file_paths, output_path)
         
         # Send merged file
-        await callback.message.edit_text("📤 Sending merged PDF...")
-        merged_file = FSInputFile(output_path, filename="merged_document.pdf")
+        await callback.message.edit_text("📤 Birlashtirilgan PDF yuborilmoqda...")
+        merged_file = FSInputFile(output_path, filename="birlashtirilgan_hujjat.pdf")
         
         await callback.message.answer_document(
             document=merged_file,
-            caption="🎉 Here is your merged PDF document!"
+            caption="🎉 Birlashtirilgan PDF hujjatingiz tayyor!"
         )
         
         # Increment statistics in DB
@@ -118,7 +118,7 @@ async def process_merge(callback: CallbackQuery, state: FSMContext) -> None:
         
     except Exception as e:
         logger.error(f"Failed to merge PDFs: {e}", exc_info=True)
-        await callback.message.answer("❌ An error occurred while merging your PDF files. Please try again.")
+        await callback.message.answer("❌ PDF fayllarni birlashtirishda xatolik yuz berdi. Qaytadan urinib ko'ring.")
     finally:
         # Cleanup session directory and clear state
         await state.clear()
@@ -132,7 +132,8 @@ async def cancel_merge(callback: CallbackQuery, state: FSMContext) -> None:
     session_dir = data.get("session_dir")
     
     await state.clear()
-    await callback.message.edit_text("❌ Merge operation cancelled.")
+    await callback.message.edit_text("❌ Birlashtirish amali bekor qilindi.")
     
     if session_dir:
         await asyncio.to_thread(delete_path, session_dir)
+

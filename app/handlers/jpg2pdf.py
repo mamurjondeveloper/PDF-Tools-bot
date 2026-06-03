@@ -35,10 +35,10 @@ async def start_jpg2pdf(message: Message, state: FSMContext) -> None:
     
     await message.answer(
         text=(
-            "📥 **JPG(s) → PDF Mode**\n\n"
-            "Please send the images (JPG, JPEG, or PNG) you want to convert.\n"
-            "You can send them as compressed photos or uncompressed documents.\n"
-            "Once you have uploaded all images, click **Done (Convert)** below."
+            "📥 **JPG → PDF rejimi**\n\n"
+            "Iltimos, PDF-ga aylantirmoqchi bo'lgan rasmlaringizni (JPG, JPEG yoki PNG) yuboring.\n"
+            "Rasmlarni oddiy rasm yoki siqilmagan hujjat shaklida yuborishingiz mumkin.\n"
+            "Barcha rasmlarni yuborgandan so'ng, **Bajarildi (Konvertatsiya)** tugmasini bosing."
         ),
         reply_markup=get_jpg2pdf_keyboard(),
         parse_mode="Markdown"
@@ -50,7 +50,7 @@ async def handle_image_download(message: Message, state: FSMContext, bot: Bot, f
     session_dir = data["session_dir"]
     image_paths = data["image_paths"]
     
-    status_msg = await message.answer(f"📥 Downloading image: `{original_name}`...", parse_mode="Markdown")
+    status_msg = await message.answer(f"📥 Rasm yuklab olinmoqda: `{original_name}`...", parse_mode="Markdown")
     
     try:
         # Determine file extension
@@ -69,16 +69,16 @@ async def handle_image_download(message: Message, state: FSMContext, bot: Bot, f
         
         await status_msg.edit_text(
             text=(
-                f"✅ Added image #{file_idx}: `{original_name}`\n\n"
-                f"Total images uploaded: **{file_idx}**\n"
-                "Send another image or click **Done (Convert)** to compile."
+                f"f'✅ #{file_idx}-rasm qo'shildi: `{original_name}`\n\n"
+                f"Yuklangan jami rasmlar: **{file_idx}**\n"
+                "Yana rasm yuboring yoki **Bajarildi (Konvertatsiya)** tugmasini bosing."
             ),
             reply_markup=get_jpg2pdf_keyboard(),
             parse_mode="Markdown"
         )
     except Exception as e:
         logger.error(f"Error downloading image: {e}", exc_info=True)
-        await status_msg.edit_text("❌ Failed to download image. Please try again.")
+        await status_msg.edit_text("❌ Rasmni yuklab olishda xatolik yuz berdi. Qaytadan urinib ko'ring.")
 
 @router.message(JpgToPdfStates.waiting_for_images, F.photo)
 async def collect_photo(message: Message, state: FSMContext, bot: Bot) -> None:
@@ -92,7 +92,7 @@ async def collect_document_image(message: Message, state: FSMContext, bot: Bot) 
     """Collects image files sent as uncompressed documents."""
     doc = message.document
     if not doc or not (doc.file_name.lower().endswith((".jpg", ".jpeg", ".png")) or (doc.mime_type and doc.mime_type.startswith("image/"))):
-        await message.answer("⚠️ Please upload only JPG, JPEG, or PNG image files.")
+        await message.answer("⚠️ Iltimos, faqat JPG, JPEG yoki PNG formatidagi rasmlarni yuklang.")
         return
         
     await handle_image_download(message, state, bot, doc.file_id, doc.file_name)
@@ -105,10 +105,10 @@ async def process_jpg2pdf(callback: CallbackQuery, state: FSMContext) -> None:
     session_dir = data.get("session_dir")
     
     if not image_paths:
-        await callback.answer("⚠️ You must upload at least 1 image to convert.", show_alert=True)
+        await callback.answer("⚠️ Konvertatsiya qilish uchun kamida 1 ta rasm yuklashingiz kerak.", show_alert=True)
         return
         
-    await callback.message.edit_text("⏳ Compiling images into a PDF, please wait...")
+    await callback.message.edit_text("⏳ Rasmlar PDF-ga joylanmoqda, iltimos kuting...")
     
     output_path = os.path.join(session_dir, "converted_images.pdf")
     
@@ -117,12 +117,12 @@ async def process_jpg2pdf(callback: CallbackQuery, state: FSMContext) -> None:
         await images_to_pdf(image_paths, output_path)
         
         # Send PDF file
-        await callback.message.edit_text("📤 Sending PDF...")
+        await callback.message.edit_text("📤 PDF yuborilmoqda...")
         pdf_file = FSInputFile(output_path, filename="converted_images.pdf")
         
         await callback.message.answer_document(
             document=pdf_file,
-            caption="🎉 Here is your converted PDF document!"
+            caption="🎉 Rasmlardan tayyorlangan PDF hujjatingiz tayyor!"
         )
         
         # Log conversion statistics
@@ -132,7 +132,7 @@ async def process_jpg2pdf(callback: CallbackQuery, state: FSMContext) -> None:
         
     except Exception as e:
         logger.error(f"Failed to convert images to PDF: {e}", exc_info=True)
-        await callback.message.answer("❌ An error occurred while converting your images. Please try again.")
+        await callback.message.answer("❌ Rasmlarni PDF-ga aylantirishda xatolik yuz berdi. Qaytadan urinib ko'ring.")
     finally:
         # Cleanup files and state
         await state.clear()
@@ -146,7 +146,8 @@ async def cancel_jpg2pdf(callback: CallbackQuery, state: FSMContext) -> None:
     session_dir = data.get("session_dir")
     
     await state.clear()
-    await callback.message.edit_text("❌ Image conversion cancelled.")
+    await callback.message.edit_text("❌ Rasmlarni PDF-ga aylantirish amali bekor qilindi.")
     
     if session_dir:
         await asyncio.to_thread(delete_path, session_dir)
+

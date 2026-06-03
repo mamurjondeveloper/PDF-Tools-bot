@@ -27,15 +27,15 @@ class SplitStates(StatesGroup):
     waiting_for_range = State()
     waiting_for_extract = State()
 
-@router.message(F.text == "✂️ PDF Split")
+@router.message(F.text == "✂️ PDF Ajratish")
 async def start_split(message: Message, state: FSMContext) -> None:
     """Initiates the PDF split workflow."""
     await state.clear()
     await state.set_state(SplitStates.waiting_for_pdf)
     await message.answer(
         text=(
-            "📥 **PDF Split Mode**\n\n"
-            "Please upload the PDF file you wish to split."
+            "📥 **PDF Ajratish rejimi**\n\n"
+            "Iltimos, ajratmoqchi bo'lgan PDF faylingizni yuklang."
         ),
         reply_markup=get_cancel_keyboard("split"),
         parse_mode="Markdown"
@@ -46,7 +46,7 @@ async def collect_pdf_for_split(message: Message, state: FSMContext, bot: Bot) -
     """Accepts and processes the uploaded PDF for splitting."""
     doc = message.document
     if not doc or not (doc.file_name.lower().endswith(".pdf") or doc.mime_type == "application/pdf"):
-        await message.answer("⚠️ Please upload only PDF files.")
+        await message.answer("⚠️ Iltimos, faqat PDF fayllarini yuklang.")
         return
         
     session_id = str(uuid.uuid4())
@@ -55,7 +55,7 @@ async def collect_pdf_for_split(message: Message, state: FSMContext, bot: Bot) -
     
     input_path = os.path.join(session_dir, "input.pdf")
     
-    status_msg = await message.answer("📥 Downloading PDF...")
+    status_msg = await message.answer("📥 PDF yuklab olinmoqda...")
     
     try:
         await bot.download(file=doc.file_id, destination=input_path)
@@ -73,9 +73,9 @@ async def collect_pdf_for_split(message: Message, state: FSMContext, bot: Bot) -
         await state.set_state(SplitStates.waiting_for_option)
         await status_msg.edit_text(
             text=(
-                f"📊 Document: `{doc.file_name}`\n"
-                f"Pages detected: **{page_count}**\n\n"
-                "How would you like to split this PDF? Select an option below:"
+                f"📊 Hujjat: `{doc.file_name}`\n"
+                f"Sahifalar soni: **{page_count}** ta\n\n"
+                "Ushbu PDF faylni qanday ajratmoqchisiz? Quyidagi variantlardan birini tanlang:"
             ),
             reply_markup=get_split_options_keyboard(),
             parse_mode="Markdown"
@@ -86,7 +86,7 @@ async def collect_pdf_for_split(message: Message, state: FSMContext, bot: Bot) -
         await asyncio.to_thread(delete_path, session_dir)
     except Exception as e:
         logger.error(f"Error handling PDF split file: {e}", exc_info=True)
-        await status_msg.edit_text("❌ Failed to process document. Please try again.")
+        await status_msg.edit_text("❌ Hujjatni yuklashda xatolik yuz berdi. Qaytadan urinib ko'ring.")
         await state.clear()
         if session_dir:
             await asyncio.to_thread(delete_path, session_dir)
@@ -99,7 +99,7 @@ async def process_split_all(callback: CallbackQuery, state: FSMContext) -> None:
     session_dir = data["session_dir"]
     page_count = data["page_count"]
     
-    await callback.message.edit_text("⏳ Splitting pages, please wait...")
+    await callback.message.edit_text("⏳ Sahifalar ajratilmoqda, iltimos kuting...")
     
     try:
         # Create output dir for split pages
@@ -123,8 +123,8 @@ async def process_split_all(callback: CallbackQuery, state: FSMContext) -> None:
             zip_path = await asyncio.to_thread(shutil.make_archive, zip_base, "zip", split_dir)
             
             await callback.message.answer_document(
-                document=FSInputFile(zip_path, filename="split_pages.zip"),
-                caption=f"📦 Split successfully! Here are all {page_count} pages archived as a ZIP file."
+                document=FSInputFile(zip_path, filename="ajratilgan_sahifalar.zip"),
+                caption=f"📦 Sahifalar muvaffaqiyatli ajratildi! Barcha {page_count} sahifalar bitta ZIP arxiv ko'rinishida taqdim etildi."
             )
             
         await log_conversion(callback.from_user.id, "split")
@@ -132,7 +132,7 @@ async def process_split_all(callback: CallbackQuery, state: FSMContext) -> None:
         
     except Exception as e:
         logger.error(f"Error in split_all handler: {e}", exc_info=True)
-        await callback.message.answer("❌ An error occurred during splitting.")
+        await callback.message.answer("❌ Ajratish jarayonida xatolik yuz berdi.")
     finally:
         await state.clear()
         await asyncio.to_thread(delete_path, session_dir)
@@ -146,10 +146,10 @@ async def ask_split_range(callback: CallbackQuery, state: FSMContext) -> None:
     await state.set_state(SplitStates.waiting_for_range)
     await callback.message.edit_text(
         text=(
-            f"🔢 **Split by Page Range**\n\n"
-            f"Please enter the page range you want to extract.\n"
-            f"Use numbers and dashes/commas (e.g. `1-3, 5-8`).\n\n"
-            f"Total Pages in document: **{page_count}**"
+            f"🔢 **Sahifalar oralig'i bo'yicha ajratish**\n\n"
+            f"Iltimos, ajratib olmoqchi bo'lgan sahifalar oralig'ini kiriting.\n"
+            f"Masalan: `1-3, 5-8` shaklida yozing.\n\n"
+            f"Hujjatdagi jami sahifalar: **{page_count}**"
         ),
         reply_markup=get_cancel_keyboard("split"),
         parse_mode="Markdown"
@@ -164,9 +164,10 @@ async def ask_split_extract(callback: CallbackQuery, state: FSMContext) -> None:
     await state.set_state(SplitStates.waiting_for_extract)
     await callback.message.edit_text(
         text=(
-            f"🎯 **Extract Selected Pages**\n\n"
-            f"Please enter the specific page numbers you want to extract, separated by commas (e.g. `1, 3, 5`).\n\n"
-            f"Total Pages in document: **{page_count}**"
+            f"🎯 **Tanlangan sahifalarni ajratib olish**\n\n"
+            f"Iltimos, ajratib olmoqchi bo'lgan sahifa raqamlarini vergul bilan ajratib kiriting.\n"
+            f"Masalan: `1, 3, 5` shaklida yozing.\n\n"
+            f"Hujjatdagi jami sahifalar: **{page_count}**"
         ),
         reply_markup=get_cancel_keyboard("split"),
         parse_mode="Markdown"
@@ -187,23 +188,23 @@ async def process_custom_split(message: Message, state: FSMContext) -> None:
     valid_pages = parse_range_string(user_input, page_count)
     if not valid_pages:
         await message.answer(
-            f"⚠️ Invalid format or page numbers out of range.\n"
-            f"Please enter valid pages between 1 and {page_count} (e.g., `1-3, 5`)."
+            f"⚠️ Kiritilgan sahifalar mos kelmadi yoki diapazon xato yozildi.\n"
+            f"Iltimos, 1 dan {page_count} gacha bo'lgan to'g'ri raqamlarni kiriting (masalan: `1-3, 5`)."
         )
         return
         
-    status_msg = await message.answer("⏳ Processing split request...")
+    status_msg = await message.answer("⏳ Ajratish so'rovi qayta ishlanmoqda...")
     output_path = os.path.join(session_dir, "extracted_output.pdf")
     
     try:
         await extract_pdf_pages(input_path, user_input, output_path)
         
-        await status_msg.edit_text("📤 Sending extracted PDF...")
-        extracted_file = FSInputFile(output_path, filename="extracted_document.pdf")
+        await status_msg.edit_text("📤 Ajratib olingan PDF yuborilmoqda...")
+        extracted_file = FSInputFile(output_path, filename="ajratilgan_hujjat.pdf")
         
         await message.answer_document(
             document=extracted_file,
-            caption=f"🎉 Successfully extracted pages: {user_input}"
+            caption=f"🎉 Sahifalar muvaffaqiyatli ajratib olindi: {user_input}"
         )
         
         await log_conversion(message.from_user.id, "split")
@@ -219,7 +220,7 @@ async def process_custom_split(message: Message, state: FSMContext) -> None:
                 
     except Exception as e:
         logger.error(f"Error in custom split: {e}", exc_info=True)
-        await status_msg.edit_text("❌ An error occurred while extracting PDF pages.")
+        await status_msg.edit_text("❌ PDF sahifalarini ajratib olishda xatolik yuz berdi.")
     finally:
         await state.clear()
         await asyncio.to_thread(delete_path, session_dir)
@@ -231,7 +232,8 @@ async def cancel_split(callback: CallbackQuery, state: FSMContext) -> None:
     session_dir = data.get("session_dir")
     
     await state.clear()
-    await callback.message.edit_text("❌ Split operation cancelled.")
+    await callback.message.edit_text("❌ Ajratish amali bekor qilindi.")
     
     if session_dir:
         await asyncio.to_thread(delete_path, session_dir)
+
