@@ -5,109 +5,103 @@
 [![SQLite](https://img.shields.io/badge/database-SQLite-blue.svg)](https://www.sqlite.org/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
-A production-ready, asynchronous Telegram bot built with **Python 3.12+** and **aiogram 3.x**. It allows users to perform various PDF manipulation operations directly inside Telegram, such as merging, splitting, converting images to PDF, and converting Word documents to PDF.
+**PDF Tools Bot** — bu Python 3.12+ va aiogram 3.x kutubxonalari asosida yaratilgan, ishlab chiqarishga tayyor (production-ready) asinxron Telegram botdir. U foydalanuvchilarga bevosita Telegram ichida PDF-fayllarni birlashtirish, sahifalarga ajratish, rasmlarni PDF formatiga aylantirish va Word hujjatlarini PDF-ga o'tkazish imkoniyatini beradi.
 
 ---
 
-## 📌 Full System Flowchart (Tizimning Ishlash Sxemasi)
+## 📌 Tizimning to'liq ishlash sxemasi (Flowchart)
 
-The diagram below maps the complete lifecycle of a user request—from middleware logging to state-based processing and automated disk cleanup:
+Quyidagi diagrammada foydalanuvchi so'rovini qabul qilishdan boshlab, ma'lumotlar bazasiga yozish, holatlarni FSM orqali boshqarish, fayllarni qayta ishlash va tizim tozalashgacha bo'lgan barcha bosqichlar tasvirlangan:
 
 ```mermaid
 flowchart TD
-    User([👤 User]) -->|Sends Command or clicks button| Bot[🤖 Telegram Bot]
+    User([👤 Foydalanuvchi]) -->|Buyruq yuborish yoki tugmani bosish| Bot[🤖 Telegram Bot]
     
-    subgraph Middlewares [Middlewares Layer]
-        Bot -->|Intercept update| DbMiddleware[⚙️ Database Registration Middleware]
-        DbMiddleware -->|Register / Update Profile| SQLite[(🗄️ SQLite DB)]
-        DbMiddleware -->|Pass execution| Router[🧭 Router Dispatcher]
+    subgraph Middlewares [Middleware qatlami]
+        Bot -->|So'rovni tutib olish| DbMiddleware[⚙️ Ma'lumotlar bazasi middleware]
+        DbMiddleware -->|Profilni ro'yxatga olish / yangilash| SQLite[(🗄️ SQLite MB)]
+        DbMiddleware -->|So'rovni yo'naltirish| Router[🧭 Router Dispatcher]
     end
 
-    subgraph FSM_States [FSM State Handlers]
-        Router -->|📎 PDF Merge button| StateMerge[🔄 MergeStates.waiting_for_pdfs]
-        Router -->|✂️ PDF Split button| StateSplit[🔄 SplitStates.waiting_for_pdf]
-        Router -->|🖼️ JPG to PDF button| StateJpg[🔄 JpgToPdfStates.waiting_for_images]
-        Router -->|📄 DOC to PDF button| StateDoc[🔄 DocToPdfStates.waiting_for_doc]
-        Router -->|🛡️ /admin command| AdminHandler[🛡️ Admin Dashboard]
+    subgraph FSM_States [FSM Holat boshqaruvchisi]
+        Router -->|📎 PDF Birlashtirish tugmasi| StateMerge[🔄 MergeStates.waiting_for_pdfs]
+        Router -->|✂️ PDF Ajratish tugmasi| StateSplit[🔄 SplitStates.waiting_for_pdf]
+        Router -->|🖼️ JPG to PDF tugmasi| StateJpg[🔄 JpgToPdfStates.waiting_for_images]
+        Router -->|📄 Word to PDF tugmasi| StateDoc[🔄 DocToPdfStates.waiting_for_doc]
+        Router -->|🛡️ /admin buyrug'i| AdminHandler[🛡️ Admin paneli]
     end
 
-    subgraph Storage [Files Download & Isolation]
-        StateMerge -->|Send PDFs| DownloadPDF[📥 Bot downloads PDF]
-        StateSplit -->|Send PDF| DownloadSplit[📥 Bot downloads PDF]
-        StateJpg -->|Send Photo/Doc| DownloadJpg[📥 Bot downloads Image]
-        StateDoc -->|Send DOC/DOCX| DownloadDoc[📥 Bot downloads Doc]
+    subgraph Storage [Yuklab olish va izolyatsiyalash]
+        StateMerge -->|PDF yuborish| DownloadPDF[📥 Bot PDF yuklab oladi]
+        StateSplit -->|PDF yuborish| DownloadSplit[📥 Bot PDF yuklab oladi]
+        StateJpg -->|Rasm yuborish| DownloadJpg[📥 Bot rasmni yuklab oladi]
+        StateDoc -->|Word fayl yuborish| DownloadDoc[📥 Bot Word faylni yuklab oladi]
         
-        DownloadPDF -->|Save to| TempFolder[📁 temp/user_id_session/]
-        DownloadSplit -->|Save to| TempFolder
-        DownloadJpg -->|Save to| TempFolder
-        DownloadDoc -->|Save to| TempFolder
+        DownloadPDF -->|Saqlash manzili| TempFolder[📁 temp/user_id_session/]
+        DownloadSplit -->|Saqlash manzili| TempFolder
+        DownloadJpg -->|Saqlash manzili| TempFolder
+        DownloadDoc -->|Saqlash manzili| TempFolder
     end
 
-    subgraph Services [Processing Services]
-        TempFolder -->|Click Done| MergeService[📎 pdf_service.merge_pdfs]
-        TempFolder -->|Select option & inputs| SplitService[✂️ pdf_service.split / extract]
-        TempFolder -->|Click Done| ImageService[🖼️ image_service.images_to_pdf]
-        TempFolder -->|Trigger auto run| DocService[📄 doc_service.doc_to_pdf]
+    subgraph Services [Qayta ishlash xizmatlari]
+        TempFolder -->|Bajarildi tugmasi| MergeService[📎 pdf_service.merge_pdfs]
+        TempFolder -->|Tanlov va sahifalar kiritish| SplitService[✂️ pdf_service.split / extract]
+        TempFolder -->|Bajarildi tugmasi| ImageService[🖼️ image_service.images_to_pdf]
+        TempFolder -->|Avtomatik ishga tushish| DocService[📄 doc_service.doc_to_pdf]
     end
 
-    subgraph Output [Delivery & Garbage Collection]
-        MergeService -->|Success| SuccessHandler[📦 Success Handler]
-        SplitService -->|Success| SuccessHandler
-        ImageService -->|Success| SuccessHandler
-        DocService -->|Success| SuccessHandler
+    subgraph Output [Yuborish va tozalash]
+        MergeService -->|Muvaffaqiyatli| SuccessHandler[📦 Natijani boshqaruvchi]
+        SplitService -->|Muvaffaqiyatli| SuccessHandler
+        ImageService -->|Muvaffaqiyatli| SuccessHandler
+        DocService -->|Muvaffaqiyatli| SuccessHandler
         
-        SuccessHandler -->|Send Output Document| User
-        SuccessHandler -->|Log conversion event| SQLite
-        SuccessHandler -->|Trigger Cleanup| Cleanup[🧹 cleanup_service.delete_path]
-        Cleanup -->|Delete Session files| TempFolder
+        SuccessHandler -->|Natijaviy hujjatni yuborish| User
+        SuccessHandler -->|Konvertatsiyani MBga yozish| SQLite
+        SuccessHandler -->|Tozalashni boshlash| Cleanup[🧹 cleanup_service.delete_path]
+        Cleanup -->|Sessiya fayllarini o'chirish| TempFolder
     end
 
-    subgraph Daemon [Background Daemon]
-        CleanupDaemon[⏰ start_cleanup_loop] -->|Every 30m| ScanTemp[🔍 Scan temp/ for files > 1h]
-        ScanTemp -->|Purge expired directories| TempFolder
+    subgraph Daemon [Orqa fondagi tozalovchi]
+        CleanupDaemon[⏰ start_cleanup_loop] -->|Har 30 daqiqada| ScanTemp[🔍 temp/ papkani skanerlash]
+        ScanTemp -->|Muddati o'tgan fayllarni o'chirish| TempFolder
     end
 ```
 
 ---
 
-## 🔍 How the Full Architecture Works (Tizimning Ishlash Prinsipi)
+## 🔍 Tizim arxitekturasi qanday ishlaydi?
 
-### 1. Request Interception & Identification (So'rovlarni Qabul Qilish va Ro'yxatdan O'tkazish)
-- Every incoming message or callback query triggers the `DbMiddleware`.
-- The middleware asynchronously checks if the user is registered in the SQLite database (`users` table). If they are new, it inserts their details (User ID, First Name, Username, ISO registration date). If they are existing, it updates their display profile details to keep statistics accurate.
+### 1. So'rovlarni tutib olish va ro'yxatga olish (DbMiddleware)
+- Botga kelgan har bir xabar yoki tugma bosilishi (Callback Query) dastlab `DbMiddleware` orqali o'tadi.
+- Middleware foydalanuvchining ID-raqami orqali SQLite ma'lumotlar bazasini tekshiradi. Agar foydalanuvchi yangi bo'lsa, tizim uni avtomatik ravishda ro'yxatga oladi, aks holda uning profil ma'lumotlarini (ismi va taxallusi) yangilaydi.
 
-### 2. State Isolation via Finite State Machine (FSM orqali Holatni Boshqarish)
-- Since Telegram operations are asynchronous, multiple users can process different files at the same time. The bot keeps track of each user's progress using **Finite State Machine (FSM)**.
-- Selecting a tool from the keyboard registers the user's chat into a specific state (e.g. `MergeStates.waiting_for_pdfs`). Until they cancel or complete the sequence, their inputs are processed solely by that state's handler.
+### 2. Sessiyalarni izolyatsiyalash (FSM va Temp)
+- Ko'p foydalanuvchilar botdan bir vaqtda foydalanganda bir-birining fayllariga xalaqit bermasligi uchun **Finite State Machine (FSM)** tizimi ishlatiladi. Foydalanuvchi ma'lum bir amalni boshlaganida (masalan, birlashtirish), bot uning chat holatini ma'lum bir rejimga o'tkazadi va keyingi yuborilgan fayllar faqat shu rejim doirasida ishlov beriladi.
+- Har bir sessiya uchun alohida vaqtinchalik papka yaratiladi: `temp/{user_id}_[operation]_[session_id]/`.
 
-### 3. Isolated Disk Storage (Fayllarni Izolyatsiyalash)
-- To prevent upload conflicts between users (or different conversions from the same user), the bot generates a unique session ID (`uuid4`) for each process.
-- All downloaded files are stored under an isolated path: `temp/{user_id}_[operation]_{session_id}/`.
+### 3. Asinxron qayta ishlash xizmatlari
+- PDF va rasmlarni qayta ishlash, shuningdek Microsoft Word orqali PDF yaratish jarayonlari protsessorga (CPU) katta yuklama beradi. Ushbu og'ir vazifalar asosiy asinxron oqimni (event loop) bloklab qo'ymasligi va boshqa foydalanuvchilarga xalaqit bermasligi uchun barcha operatsiyalar `asyncio.to_thread` yordamida alohida orqa fon threadlarida bajariladi.
+- **Windows tizimida Word fayllarini konvertatsiya qilish:** Microsoft Word COM interfeysi orqali asinxron ravishda boshqariladi. Oqimlar bilan ishlashda xatoliklar yuz bermasligi uchun thread ichida `pythoncom.CoInitialize()` va `pythoncom.CoUninitialize()` chaqiriladi.
 
-### 4. Asynchronous Core Services (Asinxron Xizmatlar)
-- Processing large files is CPU-bound (converting images, merging PDFs, interacting with MS Word APIs). Running these directly inside `asyncio` would block the main event loop, causing the bot to freeze for other users.
-- The bot wraps all file processing inside `asyncio.to_thread` (which executes CPU tasks on a background threadpool), keeping the bot responsive to other requests.
-- **DOC to PDF on Windows:** Uses Microsoft Word's COM interface. The thread is safely isolated and calls `pythoncom.CoInitialize()` and `pythoncom.CoUninitialize()` to prevent COM thread-affinity errors.
-
-### 5. Delivery, Accounting & Garbage Collection (Tashish va Tozalash Tizimi)
-- Once the output file (PDF, ZIP, or split pages) is ready, it is dispatched back to the user chat via Telegram's Document Sender.
-- Upon successful delivery, the database logs the conversion type, increments the user's `conversion_count`, and triggers a cleanup routine that immediately deletes the temporary session folder.
-- A secondary background daemon (`start_cleanup_loop`) runs globally every 30 minutes to scan the `temp/` folder and delete any abandoned files older than 1 hour.
+### 4. Avtomatik tozalash tizimi
+- Foydalanuvchiga natijaviy fayl muvaffaqiyatli yuborilishi bilan, ushbu sessiyaga tegishli vaqtinchalik papka va undagi barcha yuklangan fayllar `cleanup_service.delete_path` orqali zudlik bilan o'chiriladi.
+- Agar foydalanuvchi jarayonni chala qoldirib ketgan bo'lsa, orqa fondagi `start_cleanup_loop` xizmati har 30 daqiqada `temp/` papkasini tekshirib, 1 soatdan ko'p vaqt davomida turgan eski vaqtinchalik fayllarni tozalaydi.
 
 ---
 
-## ✨ Features List
+## ✨ Imkoniyatlar ro'yxati
 
-- **📎 PDF Merge:** Combine multiple PDFs in the exact upload order.
-- **✂️ PDF Split:** Extract specific pages (`1, 3, 5`), range selections (`1-3, 5-8`), or split every page (delivering a single ZIP archive for files > 3 pages).
-- **🖼️ JPG(s) → PDF:** Upload images (compressed or documents) and convert them to a high-quality PDF with automatic dimensions calculations.
-- **📄 DOC → PDF:** High-fidelity Word to PDF conversion preserving styles and structure.
-- **🧹 Temp Cleanup:** Safe, isolated file deletes and automated daemon cleaning.
-- **🛡️ Admin Panel:** Authorized users can run `/admin` to see registration counts, total operations logs, active daily sessions, and trigger rich-text announcements broadcasts with progress counters.
+- **📎 PDF Birlashtirish:** Bir nechta PDF hujjatlarini yuklang, ular yuborilgan tartibida bitta faylga birlashtiriladi.
+- **✂️ PDF Ajratish:** Sahifalarni yakka-yakka ajratish (agar 3 tadan ko'p sahifa bo'lsa, avtomatik ZIP arxiv shaklida yuboradi), belgilangan sahifa oralig'ini kesib olish (masalan, `1-3, 5-8`) yoki tanlangan sahifalarni ajratib olish (masalan, `1, 3, 5`).
+- **🖼️ JPG(s) → PDF:** Istalgan formatdagi rasmlarni (JPG, JPEG, PNG) siqilgan foto yoki fayl ko'rinishida yuboring va ularni sahifalari avtomatik moslashtirilgan PDF shaklida oling.
+- **📄 Word → PDF:** `.doc` va `.docx` Word hujjatlarini o'z formati va shriftlarini saqlagan holda PDF-ga o'tkazing (Microsoft Word o'rnatilgan Windows server talab etiladi).
+- **🧹 Avtomatik Tozalash:** Tizim xotirasini tejash uchun ishlov berilgan barcha fayllarni bir zumda tozalash va eski tashlab ketilgan fayllarni avtomatik o'chirish tizimi.
+- **🛡️ Admin Paneli:** Ruxsat etilgan adminlar `/admin` buyrug'i orqali foydalanuvchilar soni, umumiy operatsiyalar, kunlik faollik hisobotlarini ko'rishi hamda barcha foydalanuvchilarga (matn, rasm, fayl, tugmalardan iborat) reklama xabarlarini yuborishi mumkin.
 
 ---
 
-## 🏗️ High-Level Component Architecture (Qatlamlar Arxitekturasi)
+## 🏗️ Komponentlar arxitekturasi
 
 ```mermaid
 flowchart LR
@@ -123,7 +117,7 @@ flowchart LR
 
 ---
 
-## 📁 Project Structure Diagram (Loyiha Tuzilishi)
+## 📁 Loyiha tuzilishi diagrammasi
 
 ```mermaid
 graph TD
@@ -139,126 +133,126 @@ graph TD
     App --> Config
 ```
 
-Detailed layout:
+Batafsil tuzilishi:
 ```text
 pdf-tools-bot/
 │
-├── bot.py                  # Entrypoint: sets up bot, dispatcher, and run loops
-├── requirements.txt        # Package dependencies
-├── README.md               # Documentation
-├── .env.example            # Environment variables example template
-├── .gitignore              # Files ignored by Git
+├── bot.py                  # Kirish nuqtasi: bot, dispatcher va orqa fon vazifalarini sozlaydi
+├── requirements.txt        # Zaruriy kutubxonalar ro'yxati
+├── README.md               # Loyiha qo'llanmasi (hujjat)
+├── .env.example            # Sozlamalar andozasi
+├── .gitignore              # Git tomonidan hisobga olinmaydigan fayllar ro'yxati
 │
 ├── app/
-│   ├── config/             # System config loading & path checks
+│   ├── config/             # Tizim sozlamalarini yuklash va tekshirish
 │   │   └── config.py
-│   ├── database/           # Asynchronous SQLite initialization & queries
+│   ├── database/           # Asinxron SQLite bazasi bilan ishlash
 │   │   └── db.py
-│   ├── filters/            # Command filters (e.g. IsAdmin filter)
+│   ├── filters/            # Ruxsatlarni tekshirish (masalan, Adminlikni tekshirish)
 │   │   └── admin.py
-│   ├── handlers/           # FSM state flows & Telegram commands
+│   ├── handlers/           # FSM rejimlar va Telegram hodisalari
 │   │   ├── admin.py
 │   │   ├── common.py
 │   │   ├── doc2pdf.py
 │   │   ├── jpg2pdf.py
 │   │   ├── merge.py
 │   │   └── split.py
-│   ├── keyboards/          # Inline and reply keyboard configs
+│   ├── keyboards/          # Tugmalar va menyular sozlamalari
 │   │   ├── inline.py
 │   │   └── menu.py
-│   ├── middlewares/        # Automated user profile logger middleware
+│   ├── middlewares/        # Foydalanuvchilarni bazaga yozuvchi middleware
 │   │   └── db_middleware.py
-│   ├── services/           # File converters, manipulation services, and cleaners
+│   ├── services/           # Fayllarni aylantirish va tozalash xizmatlari
 │   │   ├── cleanup_service.py
 │   │   ├── doc_service.py
 │   │   ├── image_service.py
 │   │   └── pdf_service.py
-│   └── utils/              # Helper utilities
+│   └── utils/              # Yordamchi instrumentlar
 │
-├── data/                   # SQLite database persistent storage
-├── logs/                   # Log output files
-└── temp/                   # Session-isolated conversion folders
+├── data/                   # SQLite ma'lumotlar bazasi fayllari saqlanadigan papka
+├── logs/                   # Bot log fayllari papkasi
+└── temp/                   # Sessiyaga tegishli vaqtinchalik papkalar
 ```
 
 ---
 
-## 🚀 Installation Guide
+## 🚀 O'rnatish yo'riqnomasi
 
-### Prerequisites
-- Python 3.12 or newer installed.
-- Microsoft Word (required only on Windows host systems for DOC/DOCX conversion).
+### Tizim talablari
+- Python 3.12 yoki undan yuqori versiya.
+- Microsoft Word (faqat Windows serverda Word-dan PDF-ga o'tkazish xizmati uchun talab etiladi).
 
-### Setup Steps
-1. **Clone the Repository:**
+### Loyihani sozlash bosqichlari
+1. **Loyihani yuklab oling (Clone):**
    ```bash
    git clone https://github.com/mamurjondeveloper/PDF-Tools-bot.git
    cd PDF-Tools-bot
    ```
 
-2. **Create and Activate a Virtual Environment:**
+2. **Virtual muhit yaratish va faollashtirish:**
    ```bash
    python -m venv venv
-   # On Windows:
+   # Windows tizimida:
    venv\Scripts\activate
-   # On Linux/macOS:
+   # Linux/macOS tizimida:
    source venv/bin/activate
    ```
 
-3. **Install Dependencies:**
+3. **Zarur kutubxonalarni o'rnatish:**
    ```bash
    pip install -r requirements.txt
    ```
 
 ---
 
-## ⚙️ Configuration Guide
+## ⚙️ Konfiguratsiya (Sozlash)
 
-1. Copy the example configuration template to create your `.env` file:
+1. Loyihadagi `.env.example` faylini nusxalab, `.env` deb nomlang:
    ```bash
    copy .env.example .env
    ```
-2. Open the `.env` file and fill in the values:
-   - `BOT_TOKEN`: The API token generated from [@BotFather](https://t.me/BotFather).
-   - `ADMIN_IDS`: A comma-separated list of Telegram user IDs authorized to access admin stats and broadcasts (e.g. `123456789,987654321`).
-   - `LOG_LEVEL`: Output logging level (`DEBUG`, `INFO`, `WARNING`, `ERROR`).
+2. `.env` faylini ochib, sozlamalarni kiriting:
+   - `BOT_TOKEN`: [@BotFather](https://t.me/BotFather) orqali olingan bot tokeni.
+   - `ADMIN_IDS`: Admin huquqlariga ega bo'lgan foydalanuvchilarning Telegram ID raqamlari (vergul bilan ajratilgan, masalan: `123456789,987654321`).
+   - `LOG_LEVEL`: Log yozish darajasi (`DEBUG`, `INFO`, `WARNING`, `ERROR`).
 
 ---
 
-## 🏃 Running Instructions
+## 🏃 Ishga tushirish
 
-To launch the bot, execute the entrypoint script:
+Botni ishga tushirish uchun quyidagi buyruqni bajaring:
 ```bash
 python bot.py
 ```
 
 ---
 
-## 📸 Screenshots
+## 📸 Skrinshotlar
 
-*Place screenshot images of the main menu, file uploading, splitting, and admin panels here.*
-
----
-
-## 🔒 Security Notes
-
-- **FSM State Preservation:** The Finite State Machine uses `MemoryStorage` in this configuration. If the bot crashes, user states will reset. For heavy production deployments with multiple instances, configure a Redis storage backend.
-- **Access Privilege Control:** The admin router handles authorization locally via user-ID filtering. Make sure your `ADMIN_IDS` configuration is kept private.
-- **Temp Directory Permissions:** Ensure the execution user has read, write, and execute permissions on the `temp/` folder.
+*Bu yerda bot menyusi, fayllarni yuklash, ajratish hamda admin paneliga tegishli skrinshotlar joylashtiriladi.*
 
 ---
 
-## 🗺️ Roadmap
+## 🔒 Xavfsizlik qoidalari
 
-- [ ] Support Excel to PDF conversion (`.xls`, `.xlsx`).
-- [ ] Support PowerPoint to PDF conversion (`.ppt`, `.pptx`).
-- [ ] Add PDF compression utilities.
-- [ ] Add watermark stamp overlays.
-- [ ] Add password encryption and locking features.
-- [ ] Add PDF page rotation.
-- [ ] Support PDF metadata editing.
+- **FSM Holatlarini Saqlash:** Bot foydalanuvchi holatlarini tezkor xotirada (`MemoryStorage`) saqlaydi. Agar bot o'chib yonsa, foydalanuvchi holatlari bekor qilinadi. Katta yuklamali loyihalarda buni Redis bazasiga bog'lash tavsiya etiladi.
+- **Admin Huquqlari:** Admin buyruqlari qat'iy ravishda kiritilgan ID raqamlari orqali tekshiriladi. `.env` sozlamalari va ma'lumotlar bazasi maxfiyligini saqlang.
+- **Vaqtinchalik Papka Huquqlari:** Bot vaqtinchalik papkalarni erkin yarata olishi va o'chira olishi uchun `temp/` papkasiga to'liq yozish va o'chirish huquqlari berilgan bo'lishi kerak.
 
 ---
 
-## 📄 License
+## 🗺️ Kelajakdagi rejalar (Roadmap)
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+- [ ] Excel fayllarini PDF formatiga o'tkazish (`.xls`, `.xlsx`).
+- [ ] PowerPoint fayllarini PDF-ga o'tkazish (`.ppt`, `.pptx`).
+- [ ] PDF hajmini siqish (compress) xizmati.
+- [ ] PDF-ga suv belgilari (watermark) qo'yish.
+- [ ] PDF-ni parol bilan himoyalash va blokdan chiqarish.
+- [ ] PDF sahifalarini aylantirish (rotate).
+- [ ] PDF meta-ma'lumotlarini tahrirlash.
+
+---
+
+## 📄 Litsenziya
+
+Ushbu loyiha MIT litsenziyasi bo'yicha tarqatiladi — batafsil ma'lumot olish uchun [LICENSE](LICENSE) fayliga qarang.
